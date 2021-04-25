@@ -14,6 +14,6 @@ router.post('/testeando', UserController.testeando);
 //Rutas de usuarios
 router.post('/register', UserController.save);
 router.post('/login', UserController.login);
-router.put('/update', md_auth.authenticated,UserController.update);
+router.put('/update', md_auth.authenticated,UserController.update);  //crear middleware para comprobar el jwt token, ponerselo a la ruta
 
 module.exports= router;

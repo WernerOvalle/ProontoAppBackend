@@ -21,14 +21,19 @@ var controller = {
     // recoger los parametros de la peticion
     var params = req.body;
     //validar los datos
-    var validate_name = !validator.isEmpty(params.name);
-    var validate_lastname = !validator.isEmpty(params.lastname);
-    var validate_address = !validator.isEmpty(params.address);
-    var validate_birth = !validator.isEmpty(params.birth);
-    var validate_email =
-      !validator.isEmpty(params.email) && validator.isEmail(params.email);
-    var validate_password = !validator.isEmpty(params.password);
-
+    try {
+      var validate_name = !validator.isEmpty(params.name);
+      var validate_lastname = !validator.isEmpty(params.lastname);
+      var validate_address = !validator.isEmpty(params.address);
+      var validate_birth = !validator.isEmpty(params.birth);
+      var validate_email =
+        !validator.isEmpty(params.email) && validator.isEmail(params.email);
+      var validate_password = !validator.isEmpty(params.password);
+    } catch (e) {
+      return res.status(200).send({
+        message: "MISSING DATA",
+      });
+    }
     if (
       validate_name &&
       validate_lastname &&
@@ -72,6 +77,8 @@ var controller = {
                   message: "User has not been saved",
                 });
               }
+              userStored.password = undefined;
+
               //devolver respuesta
               return res.status(200).send({
                 status: "Success",
@@ -96,9 +103,15 @@ var controller = {
     //recoger los paremtros de la peticion
     var params = req.body;
     //validar los datos
-    var validate_email =
-      !validator.isEmpty(params.email) && validator.isEmail(params.email);
-    var validate_password = !validator.isEmpty(params.password);
+    try {
+      var validate_email =
+        !validator.isEmpty(params.email) && validator.isEmail(params.email);
+      var validate_password = !validator.isEmpty(params.password);
+    } catch (e) {
+      return res.status(200).send({
+        message: "MISSING DATA",
+      });
+    }
     //buscar usuarios que coicidan con el email
 
     if (validate_password && validate_email) {
@@ -148,13 +161,81 @@ var controller = {
     }
   },
   update: function (req, res) {
-    //crear middleware para comprobar el jwt token, ponesrelo a la ruta
+    //funcion
+    function updateUser(userId, params) {
+      //buscar y actualizar documento
+      User.findOneAndUpdate(
+        { _id: userId },
+        params,
+        { new: true },
+        (err, userUpdated) => {
+          //devolver respuesta
+          if (err || !userUpdated) {
+            return res.status(200).send({
+              status: "error",
+              message: "error when updating user",
+            });
+          }
+          userUpdated.password =undefined;
+          
+          return res.status(200).send({
+            status: "success",
+            user: userUpdated,
+          });
+        }
+      );
+    }
 
+    //Recoger datos del ususario
     var params = req.body;
-    return res.status(400).send({
-      message: "success",
-      params,
-    });
+
+    //validar datos
+    try {
+      var validate_name = !validator.isEmpty(params.name);
+      var validate_lastname = !validator.isEmpty(params.lastname);
+      var validate_address = !validator.isEmpty(params.address);
+      var validate_birth = !validator.isEmpty(params.birth);
+      var validate_email =
+        !validator.isEmpty(params.email) && validator.isEmail(params.email);
+    } catch (e) {
+      return res.status(200).send({
+        message: "MISSING DATA",
+      });
+    }
+
+    if (
+      validate_name &&
+      validate_lastname &&
+      validate_email &&
+      validate_birth &&
+      validate_address
+    ) {
+    }
+    //Eliminar propiedades innecsarias
+    delete params.password;
+
+    var userId = req.user.sub;
+
+    //comporbar si el email es unico
+    if (req.user.email != params.email) {
+      User.findOne({ email: params.email.toLowerCase() }, (err, user) => {
+        if (err) {
+          return res.status(500).send({
+            message: "Error trying to compare the email",
+          });
+        }
+
+        if (user) {
+          return res.status(500).send({
+            message: "User can't be modify",
+          });
+        } else {
+          updateUser(userId, params);
+        }
+      });
+    } else {
+      updateUser(userId, params);
+    }
   },
 };
 
