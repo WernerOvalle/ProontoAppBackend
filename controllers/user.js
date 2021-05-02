@@ -6,6 +6,11 @@ var jwt = require("../services/jwt");
 const user = require("../models/user");
 var fs = require("fs");
 var path = require("path");
+const NODE_ENV = process.env.NODE_ENV || 'production';
+require ('dotenv').config({
+  path: `${NODE_ENV}.env`
+});
+
 
 var controller = {
   probando: function (req, res) {
@@ -255,7 +260,12 @@ var controller = {
     }
     // conseguir el nombre y extension del archivo
     var file_path = req.files.file0.path;
+   if(process.env.PATH_IMAGE==1){
+    var file_split = file_path.split("/");
+   }else{
     var file_split = file_path.split("\\");
+   }
+    
     //****advertencia en linux o mac  es '/'***
     var file_name = file_split[2];
     //extension del archivo
@@ -277,6 +287,7 @@ var controller = {
     } else {
       //sacar el id del usuario identificado
       var user_Id = req.user.sub;
+      var oldImage = req.user.image;
       //hacer update
       User.findOneAndUpdate(
         { _id: user_Id },
