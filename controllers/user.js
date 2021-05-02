@@ -4,6 +4,8 @@ var User = require("../models/user");
 var bcrypt = require("bcrypt-nodejs");
 var jwt = require("../services/jwt");
 const user = require("../models/user");
+var fs = require("fs");
+var path = require("path");
 
 var controller = {
   probando: function (req, res) {
@@ -176,8 +178,8 @@ var controller = {
               message: "error when updating user",
             });
           }
-          userUpdated.password =undefined;
-          
+          userUpdated.password = undefined;
+
           return res.status(200).send({
             status: "success",
             user: userUpdated,
@@ -235,6 +237,68 @@ var controller = {
       });
     } else {
       updateUser(userId, params);
+    }
+  },
+
+  uploadAvatar: function (req, res) {
+    //configurar el modulo multiparty (md) routes/user.js
+
+    //recoger el fichero de la peticion
+    var file_name = "Avatar not saved...";
+
+    if (Object.keys(req.files).length === 0) {
+      // devolver respuesta
+      return res.status(404).send({
+        status: "error",
+        message: file_name,
+      });
+    }
+    // conseguir el nombre y extension del archivo
+    var file_path = req.files.file0.path;
+    var file_split = file_path.split("\\");
+    //****advertencia en linux o mac  es '/'***
+    var file_name = file_split[2];
+    //extension del archivo
+    var ext_split = file_name.split(".");
+    var file_ext = ext_split[1];
+    //comprobar extension (solo img)
+    if (
+      file_ext != "png" &&
+      file_ext != "jpg" &&
+      file_ext != "jpeg" &&
+      file_ext != "gif"
+    ) {
+      fs.unlink(file_path, (err) => {
+        return res.status(200).send({
+          status: "error",
+          message: "The extension is not valid",
+        });
+      });
+    } else {
+      //sacar el id del usuario identificado
+      var user_Id = req.user.sub;
+      //hacer update
+      User.findOneAndUpdate(
+        { _id: user_Id },
+        {
+          image: file_name,
+        },
+        { new: true },
+        (err, userUpdated) => {
+          if (err || !userUpdated) {
+            return res.status(500).send({
+              status: "error",
+              message: "Erro to save data",
+            });
+          } else {
+            // devolver respuesta
+            return res.status(200).send({
+              status: "success",
+              user: userUpdated,
+            });
+          }
+        }
+      );
     }
   },
 };

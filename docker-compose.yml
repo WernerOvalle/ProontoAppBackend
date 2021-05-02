@@ -5,17 +5,17 @@ services:
     restart: always
     container_name: node
     ports:
-      - 3000:3999
+      - 3001:3999
     links:
       - db
     volumes:
       - ./:/code
   db:
     image: mongo
-    container_name: mongodb
+    container_name: mongodb2
     restart: always
     ports:
-      - 27017:27017
+      - 27016:27017
     #env_file: 
      # - production.env
     environment:
